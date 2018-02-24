@@ -9,8 +9,6 @@ DEFAULT_URLS = {'cointelegraph': 'https://cointelegraph.com/'}
 
 DEFAULT_NEWS_XPATHS = {'cointelegraph': '//*[@id="js-main-slideshow-pager"]'}
 
-NUMBER_OF_NEWS = 4
-
 
 def tree_from_html(url: str):
     page = requests.get(url)
@@ -26,14 +24,13 @@ def forest(trees: dict):
 
 def process_xpaths(forest: dict, xpaths: dict):
     news = {}
-    page = []
     for new in xpaths.keys():
-        for i in range(NUMBER_OF_NEWS):
-            import pdb
-            pdb.set_trace()
-            element = forest[new].xpath(xpaths[new] + '/div[{}]'.format(i))
-            page.append(etree.tostring(element[0]))
-        news[new] = page
+        pages = []
+        book = forest[new].xpath(xpaths[new] + '//h3')
+        for page in book:
+            pages.append(
+                etree.tostringlist(page, encoding='unicode', method='text')[0])
+        news[new] = pages
     return news
 
 
@@ -43,13 +40,17 @@ def get_news(urls={}, xpaths={}):
     if not xpaths: xpaths = DEFAULT_NEWS_XPATHS
 
     garden = forest(urls)
-    news = process_xpaths(garden, xpaths)
+    return process_xpaths(garden, xpaths)
 
 
 if __name__ == '__main__':
     # news = get_news()
 
     tree = tree_from_html('https://cointelegraph.com/')
-    data = tree.xpath('//*[@id="js-main-slideshow-pager"]/div[2]/div[1]//h3')
-    strings = etree.tostring(data[0], pretty_print=True)
-    print(etree.tostring(data[0], pretty_print=True))
+    data = tree.xpath('//*[@id="js-main-slideshow-pager"]//h3')
+    news = []
+    for new in data:
+        news.append(
+            etree.tostringlist(new, encoding='unicode', method='text')[0])
+
+    breaking_news = get_news()
